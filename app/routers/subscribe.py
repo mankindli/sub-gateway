@@ -132,13 +132,17 @@ async def get_clash_subscription(token: str, request: Request):
             customer_name=customer.name
         )
         
+        # URL 编码文件名以支持中文
+        import urllib.parse
+        encoded_name = urllib.parse.quote(customer.name)
+        
         return Response(
             content=content,
             media_type="text/yaml; charset=utf-8",
             headers={
-                "subscription-userinfo": f"upload=0; download=0; total=107374182400; expire=0",
+                "subscription-userinfo": "upload=0; download=0; total=107374182400; expire=0",
                 "profile-update-interval": "24",
-                "content-disposition": f'attachment; filename="{customer.name}.yaml"'
+                "content-disposition": f"attachment; filename*=UTF-8''{encoded_name}.yaml"
             }
         )
     except ValueError as e:
