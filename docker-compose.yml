@@ -6,8 +6,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # 持久化配置和日志
-      - ./config:/app/config
+      # 数据目录（存在仓库外部，避免 Git 冲突）
+      - /opt/sub-gateway-data:/app/config
       - ./logs:/app/logs
     env_file:
       - .env
