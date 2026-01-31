@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sub Gateway 管理后台</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -686,7 +686,7 @@
                     <button class="btn-sm" id="qrClashBtn" onclick="showQR('clash')"
                         style="padding: 0.5rem 1rem;">Clash</button>
                 </div>
-                <canvas id="qrcodeCanvas" style="border-radius: 0.5rem;"></canvas>
+                <div id="qrcodeContainer" style="background: white; padding: 10px; border-radius: 0.5rem;"></div>
                 <p id="qrcodeUrl"
                     style="font-size: 0.75rem; color: var(--text-muted); word-break: break-all; margin-top: 0.5rem;">
                 </p>
@@ -723,6 +723,7 @@
         // QR Code functions
         let currentQRUrls = {};
         let currentQRType = 'v2rayn';
+        let qrcodeInstance = null;
 
         function openQRModal(urls, customerName) {
             currentQRUrls = urls;
@@ -741,17 +742,18 @@
             document.getElementById('qrClashBtn').style.borderColor = type === 'clash' ? 'var(--primary)' : 'var(--border)';
             document.getElementById('qrClashBtn').style.color = type === 'clash' ? 'var(--primary)' : 'var(--text-muted)';
 
-            // Generate QR code
-            const canvas = document.getElementById('qrcodeCanvas');
-            QRCode.toCanvas(canvas, url, {
-                width: 256,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#ffffff'
-                }
-            }, function (error) {
-                if (error) console.error(error);
+            // Clear previous QR code
+            const container = document.getElementById('qrcodeContainer');
+            container.innerHTML = '';
+
+            // Generate new QR code
+            qrcodeInstance = new QRCode(container, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.L
             });
 
             document.getElementById('qrcodeUrl').textContent = url;
