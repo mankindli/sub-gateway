@@ -654,9 +654,45 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="confirmTitle">确认</h3>
+                <button class="modal-close" onclick="closeConfirmModal(false)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage" style="color: var(--text); margin: 0;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeConfirmModal(false)">取消</button>
+                <button class="btn-primary" onclick="closeConfirmModal(true)">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let authHeader = '';
         let customers = [];
+        let confirmResolve = null;
+
+        // Custom confirm dialog
+        function showConfirm(message, title = '确认') {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmModal').classList.add('active');
+            return new Promise(resolve => {
+                confirmResolve = resolve;
+            });
+        }
+
+        function closeConfirmModal(result) {
+            document.getElementById('confirmModal').classList.remove('active');
+            if (confirmResolve) {
+                confirmResolve(result);
+                confirmResolve = null;
+            }
+        }
 
         // Check saved auth on load
         window.onload = () => {
@@ -874,7 +910,8 @@
         }
 
         async function rotateToken(token) {
-            if (!confirm('确定要轮换 Token 吗？旧 Token 将立即失效，需要向客户发送新的订阅链接。')) return;
+            const confirmed = await showConfirm('确定要轮换 Token 吗？旧 Token 将立即失效，需要向客户发送新的订阅链接。', '轮换 Token');
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/admin/customers/${token}/rotate`, {
@@ -950,7 +987,7 @@
         async function clearOverride(token, event) {
             if (event) event.stopPropagation();
 
-            const confirmed = window.confirm('确定要清除覆盖吗？订阅将恢复到原节点。');
+            const confirmed = await showConfirm('确定要清除覆盖吗？订阅将恢复到原节点。', '清除覆盖');
             if (!confirmed) return;
 
             try {
@@ -971,7 +1008,8 @@
         }
 
         async function deleteCustomer(token, name) {
-            if (!confirm(`确定要删除客户 "${name}" 吗？此操作不可恢复。`)) return;
+            const confirmed = await showConfirm(`确定要删除客户 "${name}" 吗？此操作不可恢复。`, '删除客户');
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/admin/customers/${token}`, {
