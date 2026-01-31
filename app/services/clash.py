@@ -20,24 +20,29 @@ def parse_vmess_to_clash(share: str) -> Optional[Dict[str, Any]]:
         json_str = base64.b64decode(b64_part).decode('utf-8')
         config = json.loads(json_str)
         
+        # name 会在 get_clash_proxy 中设置，这里用占位符
         proxy: Dict[str, Any] = {
+            "name": "",  # 占位符，稍后填充
             "type": "vmess",
             "server": config.get("add", ""),
             "port": int(config.get("port", 443)),
             "uuid": config.get("id", ""),
             "alterId": int(config.get("aid", 0)),
             "cipher": config.get("scy", "auto"),
+            "udp": True,
         }
         
         # 网络类型
         net = config.get("net", "tcp")
         if net == "ws":
             proxy["network"] = "ws"
-            proxy["ws-opts"] = {}
+            ws_opts: Dict[str, Any] = {}
             if config.get("path"):
-                proxy["ws-opts"]["path"] = config["path"]
+                ws_opts["path"] = config["path"]
             if config.get("host"):
-                proxy["ws-opts"]["headers"] = {"Host": config["host"]}
+                ws_opts["headers"] = {"Host": config["host"]}
+            if ws_opts:
+                proxy["ws-opts"] = ws_opts
         elif net == "grpc":
             proxy["network"] = "grpc"
             if config.get("path"):
