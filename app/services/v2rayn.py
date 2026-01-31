@@ -1,7 +1,9 @@
 """
 Sub Gateway - v2rayN 格式渲染服务
+支持 ss://, socks5://, vmess://, vless://, trojan:// 等格式
 """
 import base64
+import json
 import urllib.parse
 from typing import Optional
 
@@ -14,10 +16,40 @@ def add_remark_to_share_link(share: str, remark: str) -> str:
     为分享链接添加或替换备注
     
     支持的格式：
+    - vmess://base64json (备注在 JSON 的 ps 字段)
     - ss://base64#remark
     - socks5://user:pass@host:port#remark
-    - socks://host:port#remark
+    - vless://uuid@host:port?params#remark
+    - trojan://password@host:port?params#remark
     """
+    share = share.strip()
+    
+    # 处理 vmess:// 链接（备注在 base64 编码的 JSON 里）
+    if share.lower().startswith('vmess://'):
+        try:
+            # 提取 base64 部分
+            b64_part = share[8:]  # 去掉 'vmess://'
+            
+            # 解码 JSON
+            json_str = base64.b64decode(b64_part).decode('utf-8')
+            config = json.loads(json_str)
+            
+            # 更新备注字段
+            config['ps'] = remark
+            
+            # 重新编码
+            new_json = json.dumps(config, ensure_ascii=False)
+            new_b64 = base64.b64encode(new_json.encode('utf-8')).decode('utf-8')
+            
+            return f"vmess://{new_b64}"
+        except Exception as e:
+            logger.warning(f"Failed to parse vmess link, using original: {e}")
+            # 解析失败，尝试用 # 方式添加备注
+            if '#' in share:
+                share = share.split('#')[0]
+            return f"{share}#{urllib.parse.quote(remark, safe='')}"
+    
+    # 处理其他格式（ss, socks5, vless, trojan 等都用 # 追加备注）
     # 移除已有的备注
     if '#' in share:
         share = share.split('#')[0]
@@ -61,3 +93,4 @@ def render_v2rayn_subscription(customer: Customer) -> str:
     
     # 不换行
     return encoded
+
