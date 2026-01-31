@@ -121,14 +121,15 @@ def parse_socks5_to_clash(share: str) -> Optional[Dict[str, Any]]:
 
 def parse_share_to_clash(share: str) -> Optional[Dict[str, Any]]:
     """根据链接类型自动解析为 Clash 配置"""
-    share = share.strip().lower()
+    share = share.strip()
+    share_lower = share.lower()
     
-    if share.startswith('vmess://'):
-        return parse_vmess_to_clash(share.strip())
-    elif share.startswith('ss://'):
-        return parse_ss_to_clash(share.strip())
-    elif share.startswith('socks5://') or share.startswith('socks://'):
-        return parse_socks5_to_clash(share.strip())
+    if share_lower.startswith('vmess://'):
+        return parse_vmess_to_clash(share)
+    elif share_lower.startswith('ss://'):
+        return parse_ss_to_clash(share)
+    elif share_lower.startswith('socks5://') or share_lower.startswith('socks://'):
+        return parse_socks5_to_clash(share)
     # vless 和 trojan 暂不支持自动解析，需要手动填 clash 配置
     return None
 
