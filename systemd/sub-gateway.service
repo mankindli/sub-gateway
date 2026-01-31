@@ -1,0 +1,28 @@
+[Unit]
+Description=Sub Gateway - 轻量订阅网关
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/sub-gateway
+Environment="PATH=/opt/sub-gateway/venv/bin"
+Environment="ADMIN_USERNAME=admin"
+Environment="ADMIN_PASSWORD=your_secure_password_here"
+Environment="BASE_URL=https://sub.yourdomain.com"
+Environment="LOG_LEVEL=INFO"
+
+ExecStart=/opt/sub-gateway/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+Restart=always
+RestartSec=5
+
+# 安全配置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/sub-gateway/config /opt/sub-gateway/logs
+
+[Install]
+WantedBy=multi-user.target

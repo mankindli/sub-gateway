@@ -1,0 +1,72 @@
+customers:
+- token: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+  name: 客户A-张三
+  enabled: true
+  nodes:
+    primary:
+      share: ss://YWVzLTI1Ni1nY206cGFzc3dvcmQxMjM=@transit.example.com:8388
+      clash:
+        type: ss
+        server: transit.example.com
+        port: 8388
+        name: null
+        cipher: aes-256-gcm
+        password: password123
+        username: null
+        udp: true
+    backup:
+      share: socks5://user1:pass1@direct.example.com:1080
+      clash:
+        type: socks5
+        server: direct.example.com
+        port: 1080
+        name: null
+        cipher: null
+        password: pass1
+        username: user1
+        udp: null
+  override: null
+  created_at: '2026-01-31T12:00:00'
+  updated_at: '2026-01-31T06:05:43.429045'
+- token: G2sEGLlvQUh6X00I0aYNfwQuyzs1kqsU
+  name: 客户B-李四
+  enabled: false
+  nodes:
+    primary:
+      share: ss://YWVzLTI1Ni1nY206YWJjMTIz@transit2.example.com:8389
+      clash:
+        type: ss
+        server: transit2.example.com
+        port: 8389
+        name: null
+        cipher: aes-256-gcm
+        password: abc123
+        username: null
+        udp: true
+    backup:
+      share: socks5://direct2.example.com:1081
+      clash:
+        type: socks5
+        server: direct2.example.com
+        port: 1081
+        name: null
+        cipher: null
+        password: null
+        username: null
+        udp: null
+  override: null
+  created_at: '2026-01-31T12:00:00'
+  updated_at: '2026-01-31T06:06:01.276380'
+- token: 5Fm4Xlq33keX6Xb338ZByZ0k0zLbNMgw
+  name: 灏学
+  enabled: true
+  nodes:
+    primary:
+      share: vmess://ewogICJ2IjogIjIiLAogICJwcyI6ICLngY/lraYg576O5Zu9IDEuMzEiLAogICJhZGQiOiAibjIwNTEuZ29yZWxheS52aXAiLAogICJwb3J0IjogIjQ2MjU2IiwKICAiaWQiOiAiNTdmMjg2MGYtNjdmMS00ZTRjLTk1NDEtOGU3Nzc1NTMwNTZkIiwKICAiYWlkIjogIjAiLAogICJzY3kiOiAiYXV0byIsCiAgIm5ldCI6ICJ0Y3AiLAogICJ0eXBlIjogIm5vbmUiLAogICJob3N0IjogIiIsCiAgInBhdGgiOiAiIiwKICAidGxzIjogIiIsCiAgInNuaSI6ICIiLAogICJhbHBuIjogIiIsCiAgImZwIjogIiIKfQ==
+      clash: null
+    backup:
+      share: vmess://ewogICJ2IjogIjIiLAogICJwcyI6ICLngY/lraYg576O5Zu9IDEuMzEg5aSH55SoIiwKICAiYWRkIjogIjM4LjY5LjI0NC45IiwKICAicG9ydCI6ICI0NjUyNCIsCiAgImlkIjogIjU3ZjI4NjBmLTY3ZjEtNGU0Yy05NTQxLThlNzc3NTUzMDU2ZCIsCiAgImFpZCI6ICIwIiwKICAic2N5IjogImF1dG8iLAogICJuZXQiOiAidGNwIiwKICAidHlwZSI6ICJub25lIiwKICAiaG9zdCI6ICIiLAogICJwYXRoIjogIiIsCiAgInRscyI6ICIiLAogICJzbmkiOiAiIiwKICAiYWxwbiI6ICIiLAogICJmcCI6ICIiCn0=
+      clash: null
+  override: null
+  created_at: '2026-01-31T07:03:50.953167'
+  updated_at: '2026-01-31T07:03:50.953170'

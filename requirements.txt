@@ -1,0 +1,8 @@
+# Sub Gateway 依赖
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+pyyaml>=6.0.1
+filelock>=3.13.0
+python-multipart>=0.0.6

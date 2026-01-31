@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sub Gateway 管理后台</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #475569;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+        }
+
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card p {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card.active .value { color: var(--success); }
+        .stat-card.disabled .value { color: var(--danger); }
+        .stat-card.override .value { color: var(--warning); }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.25rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        .customer-table {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .customer-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .customer-table th,
+        .customer-table td {
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .customer-table th {
+            background: var(--bg-input);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .customer-table tr:not(:last-child) td {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .customer-table tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .status-badge.disabled {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .status-badge.override {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-sm:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-sm.danger:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .link-copy {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-input);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            display: inline-block;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .link-copy:hover {
+            color: var(--primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 0.875rem;
+            font-family: monospace;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .node-section {
+            background: var(--bg-input);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .node-section h4 {
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 1rem; }
+            .customer-table { overflow-x: auto; }
+            .actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-card">
+            <h1>🚀 Sub Gateway</h1>
+            <p>管理后台登录</p>
+            <div class="error-msg" id="loginError"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="username" placeholder="admin" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn">登 录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <header class="header">
+            <h1>🚀 Sub Gateway 管理后台</h1>
+            <div class="header-actions">
+                <span id="adminUser"></span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="label">总客户数</div>
+                    <div class="value" id="totalCount">0</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="label">已启用</div>
+                    <div class="value" id="activeCount">0</div>
+                </div>
+                <div class="stat-card disabled">
+                    <div class="label">已禁用</div>
+                    <div class="value" id="disabledCount">0</div>
+                </div>
+                <div class="stat-card override">
+                    <div class="label">覆盖中</div>
+                    <div class="value" id="overrideCount">0</div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>客户列表</h2>
+                <button class="btn-primary" onclick="openCreateModal()">+ 新建客户</button>
+            </div>
+
+            <div class="customer-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>客户名称</th>
+                            <th>状态</th>
+                            <th>订阅链接</th>
+                            <th>更新时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerList"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建客户</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <input type="hidden" id="editToken">
+                    <div class="form-group">
+                        <label>客户名称 *</label>
+                        <input type="text" id="customerName" placeholder="例：客户A-张三" required>
+                    </div>
+                    
+                    <div class="node-section">
+                        <h4>🚀 主用节点（加速）</h4>
+                        <div class="form-group">
+                            <label>分享链接 (v2rayN) *</label>
+                            <input type="text" id="primaryShare" placeholder="ss://... 或 socks5://..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Clash 配置 (JSON)</label>
+                            <textarea id="primaryClash" placeholder='{"type":"ss","server":"x.x.x.x","port":8388,"cipher":"aes-256-gcm","password":"xxx"}'></textarea>
+                        </div>
+                    </div>
+
+                    <div class="node-section">
+                        <h4>🔄 备用节点（直连）</h4>
+                        <div class="form-group">
+                            <label>分享链接 (v2rayN) *</label>
+                            <input type="text" id="backupShare" placeholder="socks5://..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Clash 配置 (JSON)</label>
+                            <textarea id="backupClash" placeholder='{"type":"socks5","server":"x.x.x.x","port":1080}'></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-primary" onclick="saveCustomer()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Override Modal -->
+    <div class="modal-overlay" id="overrideModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>设置应急覆盖</h3>
+                <button class="modal-close" onclick="closeOverrideModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="overrideToken">
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">设置后，订阅输出将使用覆盖节点替代原节点</p>
+                <div class="form-group">
+                    <label>覆盖主节点分享链接</label>
+                    <input type="text" id="overridePrimaryShare" placeholder="ss://... 或留空">
+                </div>
+                <div class="form-group">
+                    <label>覆盖备用节点分享链接</label>
+                    <input type="text" id="overrideBackupShare" placeholder="socks5://... 或留空">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="overrideNote" placeholder="例：中转故障，临时切换">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeOverrideModal()">取消</button>
+                <button class="btn-primary" onclick="saveOverride()">设置覆盖</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let authHeader = '';
+        let customers = [];
+
+        // Check saved auth on load
+        window.onload = () => {
+            const saved = sessionStorage.getItem('auth');
+            if (saved) {
+                authHeader = saved;
+                showDashboard();
+            }
+        };
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            authHeader = 'Basic ' + btoa(username + ':' + password);
+            
+            try {
+                const res = await fetch('/admin/customers', {
+                    headers: { 'Authorization': authHeader }
+                });
+                
+                if (res.ok) {
+                    sessionStorage.setItem('auth', authHeader);
+                    document.getElementById('adminUser').textContent = username;
+                    showDashboard();
+                } else {
+                    document.getElementById('loginError').textContent = '用户名或密码错误';
+                    document.getElementById('loginError').style.display = 'block';
+                }
+            } catch (err) {
+                document.getElementById('loginError').textContent = '连接失败';
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+
+        function showDashboard() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadCustomers();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('auth');
+            authHeader = '';
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        async function loadCustomers() {
+            try {
+                const res = await fetch('/admin/customers', {
+                    headers: { 'Authorization': authHeader }
+                });
+                customers = await res.json();
+                renderCustomers();
+                updateStats();
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').textContent = customers.length;
+            document.getElementById('activeCount').textContent = customers.filter(c => c.enabled).length;
+            document.getElementById('disabledCount').textContent = customers.filter(c => !c.enabled).length;
+            document.getElementById('overrideCount').textContent = customers.filter(c => c.has_override).length;
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customerList');
+            tbody.innerHTML = customers.map(c => `
+                <tr>
+                    <td><strong>${escapeHtml(c.name)}</strong></td>
+                    <td>
+                        <span class="status-badge ${c.enabled ? 'active' : 'disabled'}">
+                            ${c.enabled ? '✓ 启用' : '✗ 禁用'}
+                        </span>
+                        ${c.has_override ? '<span class="status-badge override">⚡ 覆盖中</span>' : ''}
+                    </td>
+                    <td>
+                        <span class="link-copy" onclick="copyLink('${c.subscribe_urls.v2rayn}')" title="点击复制 v2rayN">
+                            v2rayN
+                        </span>
+                        <span class="link-copy" onclick="copyLink('${c.subscribe_urls.clash}')" title="点击复制 Clash">
+                            Clash
+                        </span>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.875rem;">
+                        ${new Date(c.updated_at).toLocaleString('zh-CN')}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-sm" onclick="toggleEnabled('${c.token}', ${!c.enabled})">
+                                ${c.enabled ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn-sm" onclick="openOverrideModal('${c.token}')">
+                                ${c.has_override ? '修改覆盖' : '设置覆盖'}
+                            </button>
+                            ${c.has_override ? `<button class="btn-sm" onclick="clearOverride('${c.token}')">清除覆盖</button>` : ''}
+                            <button class="btn-sm" onclick="rotateToken('${c.token}')">轮换Token</button>
+                            <button class="btn-sm danger" onclick="deleteCustomer('${c.token}', '${escapeHtml(c.name)}')">删除</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url);
+            showToast('已复制到剪贴板');
+        }
+
+        function openCreateModal() {
+            document.getElementById('modalTitle').textContent = '新建客户';
+            document.getElementById('editToken').value = '';
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('customerModal').classList.remove('active');
+        }
+
+        async function saveCustomer() {
+            const name = document.getElementById('customerName').value;
+            const primaryShare = document.getElementById('primaryShare').value;
+            const backupShare = document.getElementById('backupShare').value;
+            
+            let primaryClash = null;
+            let backupClash = null;
+            
+            try {
+                const pc = document.getElementById('primaryClash').value.trim();
+                if (pc) primaryClash = JSON.parse(pc);
+            } catch (e) {
+                showToast('主节点 Clash 配置 JSON 格式错误', 'error');
+                return;
+            }
+            
+            try {
+                const bc = document.getElementById('backupClash').value.trim();
+                if (bc) backupClash = JSON.parse(bc);
+            } catch (e) {
+                showToast('备用节点 Clash 配置 JSON 格式错误', 'error');
+                return;
+            }
+
+            const body = {
+                name,
+                nodes: {
+                    primary: { share: primaryShare, clash: primaryClash },
+                    backup: { share: backupShare, clash: backupClash }
+                }
+            };
+
+            try {
+                const res = await fetch('/admin/customers', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authHeader,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('客户创建成功');
+                    closeModal();
+                    loadCustomers();
+                    
+                    // Show subscription URLs
+                    setTimeout(() => {
+                        alert(`客户创建成功！\n\nToken: ${data.token}\n\nv2rayN 订阅:\n${data.subscribe_urls.v2rayn}\n\nClash 订阅:\n${data.subscribe_urls.clash}`);
+                    }, 100);
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || '创建失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function toggleEnabled(token, enabled) {
+            try {
+                const res = await fetch(`/admin/customers/${token}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': authHeader,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (res.ok) {
+                    showToast(enabled ? '已启用' : '已禁用');
+                    loadCustomers();
+                } else {
+                    showToast('操作失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function rotateToken(token) {
+            if (!confirm('确定要轮换 Token 吗？旧 Token 将立即失效，需要向客户发送新的订阅链接。')) return;
+            
+            try {
+                const res = await fetch(`/admin/customers/${token}/rotate`, {
+                    method: 'POST',
+                    headers: { 'Authorization': authHeader }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('Token 已轮换');
+                    loadCustomers();
+                    
+                    setTimeout(() => {
+                        alert(`Token 轮换成功！\n\n新 v2rayN 订阅:\n${data.subscribe_urls.v2rayn}\n\n新 Clash 订阅:\n${data.subscribe_urls.clash}`);
+                    }, 100);
+                } else {
+                    showToast('轮换失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        function openOverrideModal(token) {
+            document.getElementById('overrideToken').value = token;
+            document.getElementById('overridePrimaryShare').value = '';
+            document.getElementById('overrideBackupShare').value = '';
+            document.getElementById('overrideNote').value = '';
+            document.getElementById('overrideModal').classList.add('active');
+        }
+
+        function closeOverrideModal() {
+            document.getElementById('overrideModal').classList.remove('active');
+        }
+
+        async function saveOverride() {
+            const token = document.getElementById('overrideToken').value;
+            const primaryShare = document.getElementById('overridePrimaryShare').value.trim();
+            const backupShare = document.getElementById('overrideBackupShare').value.trim();
+            const note = document.getElementById('overrideNote').value.trim();
+
+            if (!primaryShare && !backupShare) {
+                showToast('请至少填写一个覆盖节点', 'error');
+                return;
+            }
+
+            const body = { note };
+            if (primaryShare) body.primary = { share: primaryShare };
+            if (backupShare) body.backup = { share: backupShare };
+
+            try {
+                const res = await fetch(`/admin/customers/${token}/override`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authHeader,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    showToast('覆盖已设置');
+                    closeOverrideModal();
+                    loadCustomers();
+                } else {
+                    showToast('设置失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function clearOverride(token) {
+            if (!confirm('确定要清除覆盖吗？订阅将恢复到原节点。')) return;
+            
+            try {
+                const res = await fetch(`/admin/customers/${token}/override`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': authHeader }
+                });
+
+                if (res.ok) {
+                    showToast('覆盖已清除');
+                    loadCustomers();
+                } else {
+                    showToast('清除失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function deleteCustomer(token, name) {
+            if (!confirm(`确定要删除客户 "${name}" 吗？此操作不可恢复。`)) return;
+            
+            try {
+                const res = await fetch(`/admin/customers/${token}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': authHeader }
+                });
+
+                if (res.ok) {
+                    showToast('客户已删除');
+                    loadCustomers();
+                } else {
+                    showToast('删除失败', 'error');
+                }
+            } catch (err) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
