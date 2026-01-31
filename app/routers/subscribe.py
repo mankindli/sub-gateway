@@ -134,7 +134,12 @@ async def get_clash_subscription(token: str, request: Request):
         
         return Response(
             content=content,
-            media_type="text/yaml; charset=utf-8"
+            media_type="text/yaml; charset=utf-8",
+            headers={
+                "subscription-userinfo": f"upload=0; download=0; total=107374182400; expire=0",
+                "profile-update-interval": "24",
+                "content-disposition": f'attachment; filename="{customer.name}.yaml"'
+            }
         )
     except ValueError as e:
         logger.error(f"Error rendering clash subscription: {e}")
