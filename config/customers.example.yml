@@ -1,0 +1,22 @@
+customers:
+- token: EXAMPLE_TOKEN_32_CHARS_MINIMUM_HERE
+  name: 示例客户
+  enabled: true
+  nodes:
+    primary:
+      share: ss://YWVzLTI1Ni1nY206cGFzc3dvcmQxMjM=@example.com:8388
+      clash:
+        type: ss
+        server: example.com
+        port: 8388
+        cipher: aes-256-gcm
+        password: example_password
+    backup:
+      share: socks5://example.com:1080
+      clash:
+        type: socks5
+        server: example.com
+        port: 1080
+  override: null
+  created_at: '2026-01-01T00:00:00'
+  updated_at: '2026-01-01T00:00:00'

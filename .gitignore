@@ -33,3 +33,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Config (contains sensitive customer data)
+config/
+!config/customers.example.yml
