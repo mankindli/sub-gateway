@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class ClashProxy(BaseModel):
     """Clash 代理节点结构"""
-    type: Literal["ss", "socks5"]
+    type: Literal["ss", "socks5", "vmess", "vless", "trojan", "http"]
     server: str
     port: int
     name: Optional[str] = None

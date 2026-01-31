@@ -1,12 +1,151 @@
 """
 Sub Gateway - Clash 格式渲染服务
+支持自动解析 vmess://, vless://, trojan://, ss://, socks5:// 链接
 """
+import base64
+import json
+import urllib.parse
 from typing import Dict, Any, List, Optional
 
 import yaml
 
 from app.models import Customer, Node
 from app.utils.logging import logger
+
+
+def parse_vmess_to_clash(share: str) -> Optional[Dict[str, Any]]:
+    """解析 vmess:// 链接为 Clash 代理配置"""
+    try:
+        b64_part = share[8:]  # 去掉 'vmess://'
+        json_str = base64.b64decode(b64_part).decode('utf-8')
+        config = json.loads(json_str)
+        
+        proxy: Dict[str, Any] = {
+            "type": "vmess",
+            "server": config.get("add", ""),
+            "port": int(config.get("port", 443)),
+            "uuid": config.get("id", ""),
+            "alterId": int(config.get("aid", 0)),
+            "cipher": config.get("scy", "auto"),
+        }
+        
+        # 网络类型
+        net = config.get("net", "tcp")
+        if net == "ws":
+            proxy["network"] = "ws"
+            proxy["ws-opts"] = {}
+            if config.get("path"):
+                proxy["ws-opts"]["path"] = config["path"]
+            if config.get("host"):
+                proxy["ws-opts"]["headers"] = {"Host": config["host"]}
+        elif net == "grpc":
+            proxy["network"] = "grpc"
+            if config.get("path"):
+                proxy["grpc-opts"] = {"grpc-service-name": config["path"]}
+        elif net != "tcp":
+            proxy["network"] = net
+        
+        # TLS
+        if config.get("tls") == "tls":
+            proxy["tls"] = True
+            if config.get("sni"):
+                proxy["servername"] = config["sni"]
+            if config.get("alpn"):
+                proxy["alpn"] = config["alpn"].split(",")
+        
+        return proxy
+    except Exception as e:
+        logger.warning(f"Failed to parse vmess link: {e}")
+        return None
+
+
+def parse_ss_to_clash(share: str) -> Optional[Dict[str, Any]]:
+    """解析 ss:// 链接为 Clash 代理配置"""
+    try:
+        # 去掉 'ss://' 和备注
+        content = share[5:]
+        if '#' in content:
+            content = content.split('#')[0]
+        
+        # 格式: base64(method:password)@server:port
+        if '@' in content:
+            b64_part, server_part = content.rsplit('@', 1)
+            decoded = base64.b64decode(b64_part + '==').decode('utf-8')
+            method, password = decoded.split(':', 1)
+            server, port = server_part.rsplit(':', 1)
+        else:
+            # 整个都是 base64
+            decoded = base64.b64decode(content + '==').decode('utf-8')
+            # method:password@server:port
+            method_pass, server_port = decoded.rsplit('@', 1)
+            method, password = method_pass.split(':', 1)
+            server, port = server_port.rsplit(':', 1)
+        
+        return {
+            "type": "ss",
+            "server": server,
+            "port": int(port),
+            "cipher": method,
+            "password": password,
+        }
+    except Exception as e:
+        logger.warning(f"Failed to parse ss link: {e}")
+        return None
+
+
+def parse_socks5_to_clash(share: str) -> Optional[Dict[str, Any]]:
+    """解析 socks5:// 链接为 Clash 代理配置"""
+    try:
+        # socks5://user:pass@server:port 或 socks5://server:port
+        content = share.replace("socks5://", "").replace("socks://", "")
+        if '#' in content:
+            content = content.split('#')[0]
+        
+        proxy: Dict[str, Any] = {"type": "socks5"}
+        
+        if '@' in content:
+            auth, server_part = content.rsplit('@', 1)
+            if ':' in auth:
+                proxy["username"], proxy["password"] = auth.split(':', 1)
+            server, port = server_part.rsplit(':', 1)
+        else:
+            server, port = content.rsplit(':', 1)
+        
+        proxy["server"] = server
+        proxy["port"] = int(port)
+        return proxy
+    except Exception as e:
+        logger.warning(f"Failed to parse socks5 link: {e}")
+        return None
+
+
+def parse_share_to_clash(share: str) -> Optional[Dict[str, Any]]:
+    """根据链接类型自动解析为 Clash 配置"""
+    share = share.strip().lower()
+    
+    if share.startswith('vmess://'):
+        return parse_vmess_to_clash(share.strip())
+    elif share.startswith('ss://'):
+        return parse_ss_to_clash(share.strip())
+    elif share.startswith('socks5://') or share.startswith('socks://'):
+        return parse_socks5_to_clash(share.strip())
+    # vless 和 trojan 暂不支持自动解析，需要手动填 clash 配置
+    return None
+
+
+def get_clash_proxy(node: Node, node_name: str) -> Optional[Dict[str, Any]]:
+    """获取节点的 Clash 代理配置"""
+    # 优先使用手动配置的 clash 字段
+    if node.clash:
+        return node.clash.to_clash_dict(node_name)
+    
+    # 尝试从 share 链接自动解析
+    proxy = parse_share_to_clash(node.share)
+    if proxy:
+        proxy["name"] = node_name
+        return proxy
+    
+    return None
 
 
 def render_clash_subscription(customer: Customer) -> str:
@@ -26,24 +165,26 @@ def render_clash_subscription(customer: Customer) -> str:
     # 主用节点
     primary_name = f"{customer.name}-主用-加速"
     primary_node = customer.get_effective_primary()
+    primary_proxy = get_clash_proxy(primary_node, primary_name)
     
-    if primary_node.clash:
-        proxies.append(primary_node.clash.to_clash_dict(primary_name))
+    if primary_proxy:
+        proxies.append(primary_proxy)
         proxy_names.append(primary_name)
     else:
-        warning = f"主节点缺少 clash 配置，已跳过: {customer.name}"
+        warning = f"主节点无法解析为 Clash 配置，已跳过: {customer.name}"
         warnings.append(warning)
         logger.warning(warning)
     
     # 备用节点
     backup_name = f"{customer.name}-备用-直连"
     backup_node = customer.get_effective_backup()
+    backup_proxy = get_clash_proxy(backup_node, backup_name)
     
-    if backup_node.clash:
-        proxies.append(backup_node.clash.to_clash_dict(backup_name))
+    if backup_proxy:
+        proxies.append(backup_proxy)
         proxy_names.append(backup_name)
     else:
-        warning = f"备用节点缺少 clash 配置，已跳过: {customer.name}"
+        warning = f"备用节点无法解析为 Clash 配置，已跳过: {customer.name}"
         warnings.append(warning)
         logger.warning(warning)
     
@@ -85,3 +226,4 @@ def render_clash_subscription(customer: Customer) -> str:
         yaml_content = warning_comments + "\n" + yaml_content
     
     return yaml_content
+
