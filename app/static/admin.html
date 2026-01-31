@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -200,9 +201,17 @@
             font-weight: 700;
         }
 
-        .stat-card.active .value { color: var(--success); }
-        .stat-card.disabled .value { color: var(--danger); }
-        .stat-card.override .value { color: var(--warning); }
+        .stat-card.active .value {
+            color: var(--success);
+        }
+
+        .stat-card.disabled .value {
+            color: var(--danger);
+        }
+
+        .stat-card.override .value {
+            color: var(--warning);
+        }
 
         .section-header {
             display: flex;
@@ -466,16 +475,30 @@
             opacity: 1;
         }
 
-        .toast.success { background: var(--success); }
-        .toast.error { background: var(--danger); }
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
 
         @media (max-width: 768px) {
-            .main-content { padding: 1rem; }
-            .customer-table { overflow-x: auto; }
-            .actions { flex-direction: column; }
+            .main-content {
+                padding: 1rem;
+            }
+
+            .customer-table {
+                overflow-x: auto;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
+
 <body>
     <!-- Login Page -->
     <div class="login-container" id="loginPage">
@@ -563,7 +586,7 @@
                         <label>客户名称 *</label>
                         <input type="text" id="customerName" placeholder="例：客户A-张三" required>
                     </div>
-                    
+
                     <div class="node-section">
                         <h4>🚀 主用节点（加速）</h4>
                         <div class="form-group">
@@ -572,7 +595,8 @@
                         </div>
                         <div class="form-group">
                             <label>Clash 配置 (JSON)</label>
-                            <textarea id="primaryClash" placeholder='{"type":"ss","server":"x.x.x.x","port":8388,"cipher":"aes-256-gcm","password":"xxx"}'></textarea>
+                            <textarea id="primaryClash"
+                                placeholder='{"type":"ss","server":"x.x.x.x","port":8388,"cipher":"aes-256-gcm","password":"xxx"}'></textarea>
                         </div>
                     </div>
 
@@ -584,7 +608,8 @@
                         </div>
                         <div class="form-group">
                             <label>Clash 配置 (JSON)</label>
-                            <textarea id="backupClash" placeholder='{"type":"socks5","server":"x.x.x.x","port":1080}'></textarea>
+                            <textarea id="backupClash"
+                                placeholder='{"type":"socks5","server":"x.x.x.x","port":1080}'></textarea>
                         </div>
                     </div>
                 </form>
@@ -647,14 +672,14 @@
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            
+
             authHeader = 'Basic ' + btoa(username + ':' + password);
-            
+
             try {
                 const res = await fetch('/admin/customers', {
                     headers: { 'Authorization': authHeader }
                 });
-                
+
                 if (res.ok) {
                     sessionStorage.setItem('auth', authHeader);
                     document.getElementById('adminUser').textContent = username;
@@ -734,7 +759,7 @@
                             <button class="btn-sm" onclick="openOverrideModal('${c.token}')">
                                 ${c.has_override ? '修改覆盖' : '设置覆盖'}
                             </button>
-                            ${c.has_override ? `<button class="btn-sm" onclick="clearOverride('${c.token}')">清除覆盖</button>` : ''}
+                            ${c.has_override ? `<button class="btn-sm" onclick="clearOverride('${c.token}', event)">清除覆盖</button>` : ''}
                             <button class="btn-sm" onclick="rotateToken('${c.token}')">轮换Token</button>
                             <button class="btn-sm danger" onclick="deleteCustomer('${c.token}', '${escapeHtml(c.name)}')">删除</button>
                         </div>
@@ -769,10 +794,10 @@
             const name = document.getElementById('customerName').value;
             const primaryShare = document.getElementById('primaryShare').value;
             const backupShare = document.getElementById('backupShare').value;
-            
+
             let primaryClash = null;
             let backupClash = null;
-            
+
             try {
                 const pc = document.getElementById('primaryClash').value.trim();
                 if (pc) primaryClash = JSON.parse(pc);
@@ -780,7 +805,7 @@
                 showToast('主节点 Clash 配置 JSON 格式错误', 'error');
                 return;
             }
-            
+
             try {
                 const bc = document.getElementById('backupClash').value.trim();
                 if (bc) backupClash = JSON.parse(bc);
@@ -812,7 +837,7 @@
                     showToast('客户创建成功');
                     closeModal();
                     loadCustomers();
-                    
+
                     // Show subscription URLs
                     setTimeout(() => {
                         alert(`客户创建成功！\n\nToken: ${data.token}\n\nv2rayN 订阅:\n${data.subscribe_urls.v2rayn}\n\nClash 订阅:\n${data.subscribe_urls.clash}`);
@@ -850,7 +875,7 @@
 
         async function rotateToken(token) {
             if (!confirm('确定要轮换 Token 吗？旧 Token 将立即失效，需要向客户发送新的订阅链接。')) return;
-            
+
             try {
                 const res = await fetch(`/admin/customers/${token}/rotate`, {
                     method: 'POST',
@@ -861,7 +886,7 @@
                     const data = await res.json();
                     showToast('Token 已轮换');
                     loadCustomers();
-                    
+
                     setTimeout(() => {
                         alert(`Token 轮换成功！\n\n新 v2rayN 订阅:\n${data.subscribe_urls.v2rayn}\n\n新 Clash 订阅:\n${data.subscribe_urls.clash}`);
                     }, 100);
@@ -922,9 +947,12 @@
             }
         }
 
-        async function clearOverride(token) {
-            if (!confirm('确定要清除覆盖吗？订阅将恢复到原节点。')) return;
-            
+        async function clearOverride(token, event) {
+            if (event) event.stopPropagation();
+
+            const confirmed = window.confirm('确定要清除覆盖吗？订阅将恢复到原节点。');
+            if (!confirmed) return;
+
             try {
                 const res = await fetch(`/admin/customers/${token}/override`, {
                     method: 'DELETE',
@@ -933,7 +961,7 @@
 
                 if (res.ok) {
                     showToast('覆盖已清除');
-                    loadCustomers();
+                    await loadCustomers();
                 } else {
                     showToast('清除失败', 'error');
                 }
@@ -944,7 +972,7 @@
 
         async function deleteCustomer(token, name) {
             if (!confirm(`确定要删除客户 "${name}" 吗？此操作不可恢复。`)) return;
-            
+
             try {
                 const res = await fetch(`/admin/customers/${token}`, {
                     method: 'DELETE',
@@ -970,4 +998,5 @@
         }
     </script>
 </body>
+
 </html>
