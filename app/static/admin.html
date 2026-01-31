@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sub Gateway 管理后台</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -671,6 +672,31 @@
         </div>
     </div>
 
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrcodeModal">
+        <div class="modal" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h3 id="qrcodeTitle">订阅二维码</h3>
+                <button class="modal-close" onclick="closeQRModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <button class="btn-sm" id="qrV2rayBtn" onclick="showQR('v2rayn')"
+                        style="padding: 0.5rem 1rem;">v2rayN</button>
+                    <button class="btn-sm" id="qrClashBtn" onclick="showQR('clash')"
+                        style="padding: 0.5rem 1rem;">Clash</button>
+                </div>
+                <canvas id="qrcodeCanvas" style="border-radius: 0.5rem;"></canvas>
+                <p id="qrcodeUrl"
+                    style="font-size: 0.75rem; color: var(--text-muted); word-break: break-all; margin-top: 0.5rem;">
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn-primary" onclick="closeQRModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let authHeader = '';
         let customers = [];
@@ -692,6 +718,47 @@
                 confirmResolve(result);
                 confirmResolve = null;
             }
+        }
+
+        // QR Code functions
+        let currentQRUrls = {};
+        let currentQRType = 'v2rayn';
+
+        function openQRModal(urls, customerName) {
+            currentQRUrls = urls;
+            document.getElementById('qrcodeTitle').textContent = customerName + ' - 订阅二维码';
+            document.getElementById('qrcodeModal').classList.add('active');
+            showQR('v2rayn');
+        }
+
+        function showQR(type) {
+            currentQRType = type;
+            const url = currentQRUrls[type];
+
+            // Update button styles
+            document.getElementById('qrV2rayBtn').style.borderColor = type === 'v2rayn' ? 'var(--primary)' : 'var(--border)';
+            document.getElementById('qrV2rayBtn').style.color = type === 'v2rayn' ? 'var(--primary)' : 'var(--text-muted)';
+            document.getElementById('qrClashBtn').style.borderColor = type === 'clash' ? 'var(--primary)' : 'var(--border)';
+            document.getElementById('qrClashBtn').style.color = type === 'clash' ? 'var(--primary)' : 'var(--text-muted)';
+
+            // Generate QR code
+            const canvas = document.getElementById('qrcodeCanvas');
+            QRCode.toCanvas(canvas, url, {
+                width: 256,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            }, function (error) {
+                if (error) console.error(error);
+            });
+
+            document.getElementById('qrcodeUrl').textContent = url;
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrcodeModal').classList.remove('active');
         }
 
         // Check saved auth on load
@@ -782,6 +849,9 @@
                         </span>
                         <span class="link-copy" onclick="copyLink('${c.subscribe_urls.clash}')" title="点击复制 Clash">
                             Clash
+                        </span>
+                        <span class="link-copy" onclick="openQRModal({v2rayn: '${c.subscribe_urls.v2rayn}', clash: '${c.subscribe_urls.clash}'}, '${escapeHtml(c.name)}')" title="显示二维码" style="background: var(--primary); color: white;">
+                            📱 二维码
                         </span>
                     </td>
                     <td style="color: var(--text-muted); font-size: 0.875rem;">
