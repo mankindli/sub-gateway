@@ -75,7 +75,7 @@ def render_v2rayn_subscription(customer: Customer) -> str:
     primary_node = customer.get_effective_primary()
     primary_share = add_remark_to_share_link(
         primary_node.share,
-        f"{customer.name}-主用-加速"
+        customer.get_primary_display_name()
     )
     lines.append(primary_share)
     
@@ -83,7 +83,7 @@ def render_v2rayn_subscription(customer: Customer) -> str:
     backup_node = customer.get_effective_backup()
     backup_share = add_remark_to_share_link(
         backup_node.share,
-        f"{customer.name}-备用-直连"
+        customer.get_backup_display_name()
     )
     lines.append(backup_share)
     

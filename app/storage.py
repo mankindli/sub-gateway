@@ -99,7 +99,12 @@ class CustomerStorage:
         token: str,
         name: Optional[str] = None,
         enabled: Optional[bool] = None,
-        nodes: Optional[Nodes] = None
+        nodes: Optional[Nodes] = None,
+        ip_source: Optional[str] = None,
+        expires_at = None,
+        remark: Optional[str] = None,
+        primary_name: Optional[str] = None,
+        backup_name: Optional[str] = None
     ) -> Optional[Customer]:
         """更新客户信息"""
         with FileLock(self.lock_path):
@@ -113,6 +118,16 @@ class CustomerStorage:
                         customer.enabled = enabled
                     if nodes is not None:
                         customer.nodes = nodes
+                    if ip_source is not None:
+                        customer.ip_source = ip_source
+                    if expires_at is not None:
+                        customer.expires_at = expires_at
+                    if remark is not None:
+                        customer.remark = remark
+                    if primary_name is not None:
+                        customer.primary_name = primary_name
+                    if backup_name is not None:
+                        customer.backup_name = backup_name
                     customer.updated_at = datetime.utcnow()
                     config.customers[i] = customer
                     self._save_config(config)

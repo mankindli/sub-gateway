@@ -562,6 +562,8 @@
                         <tr>
                             <th>客户名称</th>
                             <th>状态</th>
+                            <th>IP来源</th>
+                            <th>到期时间</th>
                             <th>订阅链接</th>
                             <th>更新时间</th>
                             <th>操作</th>
@@ -588,8 +590,43 @@
                         <input type="text" id="customerName" placeholder="例：客户A-张三" required>
                     </div>
 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>IP来源</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <select id="ipSourceSelect" onchange="handleIpSourceChange()"
+                                    style="flex: 1; padding: 0.875rem 1rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.875rem;">
+                                    <option value="">请选择...</option>
+                                    <option value="狗云">狗云</option>
+                                    <option value="搬瓦工">搬瓦工</option>
+                                    <option value="Vultr">Vultr</option>
+                                    <option value="DigitalOcean">DigitalOcean</option>
+                                    <option value="腾讯云">腾讯云</option>
+                                    <option value="阿里云">阿里云</option>
+                                    <option value="自建">自建</option>
+                                    <option value="__custom__">其他(手动输入)</option>
+                                </select>
+                            </div>
+                            <input type="text" id="ipSourceCustom" placeholder="手动输入来源"
+                                style="margin-top: 0.5rem; display: none;">
+                        </div>
+                        <div class="form-group">
+                            <label>到期时间</label>
+                            <input type="date" id="expiresAt" style="padding: 0.875rem 1rem;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input type="text" id="customerRemark" placeholder="可选备注信息">
+                    </div>
+
                     <div class="node-section">
-                        <h4>🚀 主用节点（加速）</h4>
+                        <h4>🚀 主用节点</h4>
+                        <div class="form-group">
+                            <label>节点名称</label>
+                            <input type="text" id="primaryName" placeholder="不填则默认使用客户名称">
+                        </div>
                         <div class="form-group">
                             <label>分享链接 (v2rayN) *</label>
                             <input type="text" id="primaryShare" placeholder="ss://... 或 socks5://..." required>
@@ -602,7 +639,11 @@
                     </div>
 
                     <div class="node-section">
-                        <h4>🔄 备用节点（直连）</h4>
+                        <h4>🔄 备用节点</h4>
+                        <div class="form-group">
+                            <label>节点名称</label>
+                            <input type="text" id="backupName" placeholder="不填则默认使用客户名称">
+                        </div>
                         <div class="form-group">
                             <label>分享链接 (v2rayN) *</label>
                             <input type="text" id="backupShare" placeholder="socks5://..." required>
@@ -836,15 +877,35 @@
 
         function renderCustomers() {
             const tbody = document.getElementById('customerList');
-            tbody.innerHTML = customers.map(c => `
+            tbody.innerHTML = customers.map(c => {
+                // 计算到期状态
+                let expiryHtml = '-';
+                if (c.expires_at) {
+                    const expiryDate = new Date(c.expires_at);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+                    if (daysLeft < 0) {
+                        expiryHtml = `<span style="color: var(--danger);">已过期</span>`;
+                    } else if (daysLeft <= 7) {
+                        expiryHtml = `<span style="color: var(--warning);">${expiryDate.toLocaleDateString('zh-CN')} (${daysLeft}天)</span>`;
+                    } else {
+                        expiryHtml = expiryDate.toLocaleDateString('zh-CN');
+                    }
+                }
+                return `
                 <tr>
-                    <td><strong>${escapeHtml(c.name)}</strong></td>
+                    <td>
+                        <strong>${escapeHtml(c.name)}</strong>
+                        ${c.remark ? `<br><span style="color: var(--text-muted); font-size: 0.75rem;">📝 ${escapeHtml(c.remark)}</span>` : ''}
+                    </td>
                     <td>
                         <span class="status-badge ${c.enabled ? 'active' : 'disabled'}">
                             ${c.enabled ? '✓ 启用' : '✗ 禁用'}
                         </span>
                         ${c.has_override ? '<span class="status-badge override">⚡ 覆盖中</span>' : ''}
                     </td>
+                    <td style="color: var(--text-muted); font-size: 0.875rem;">${c.ip_source || '-'}</td>
+                    <td style="font-size: 0.875rem;">${expiryHtml}</td>
                     <td>
                         <span class="link-copy" onclick="copyLink('${c.subscribe_urls.v2rayn}')" title="点击复制 v2rayN">
                             v2rayN
@@ -873,7 +934,8 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function escapeHtml(text) {
@@ -891,6 +953,13 @@
             document.getElementById('modalTitle').textContent = '新建客户';
             document.getElementById('editToken').value = '';
             document.getElementById('customerForm').reset();
+            document.getElementById('ipSourceSelect').value = '';
+            document.getElementById('ipSourceCustom').style.display = 'none';
+            document.getElementById('ipSourceCustom').value = '';
+            document.getElementById('expiresAt').value = '';
+            document.getElementById('customerRemark').value = '';
+            document.getElementById('primaryName').value = '';
+            document.getElementById('backupName').value = '';
             document.getElementById('customerModal').classList.add('active');
         }
 
@@ -898,10 +967,33 @@
             document.getElementById('customerModal').classList.remove('active');
         }
 
+        function handleIpSourceChange() {
+            const select = document.getElementById('ipSourceSelect');
+            const customInput = document.getElementById('ipSourceCustom');
+            if (select.value === '__custom__') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
+        }
+
+        function getIpSource() {
+            const select = document.getElementById('ipSourceSelect');
+            if (select.value === '__custom__') {
+                return document.getElementById('ipSourceCustom').value.trim() || null;
+            }
+            return select.value || null;
+        }
+
         async function saveCustomer() {
             const name = document.getElementById('customerName').value;
             const primaryShare = document.getElementById('primaryShare').value;
             const backupShare = document.getElementById('backupShare').value;
+            const ipSource = getIpSource();
+            const expiresAtInput = document.getElementById('expiresAt').value;
+            const expiresAt = expiresAtInput ? new Date(expiresAtInput).toISOString() : null;
 
             let primaryClash = null;
             let backupClash = null;
@@ -927,7 +1019,12 @@
                 nodes: {
                     primary: { share: primaryShare, clash: primaryClash },
                     backup: { share: backupShare, clash: backupClash }
-                }
+                },
+                ip_source: ipSource,
+                expires_at: expiresAt,
+                remark: document.getElementById('customerRemark').value.trim() || null,
+                primary_name: document.getElementById('primaryName').value.trim() || null,
+                backup_name: document.getElementById('backupName').value.trim() || null
             };
 
             try {

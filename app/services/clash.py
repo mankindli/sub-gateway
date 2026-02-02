@@ -169,7 +169,7 @@ def render_clash_subscription(customer: Customer) -> str:
     warnings: List[str] = []
     
     # 主用节点
-    primary_name = f"{customer.name}-主用-加速"
+    primary_name = customer.get_primary_display_name()
     primary_node = customer.get_effective_primary()
     primary_proxy = get_clash_proxy(primary_node, primary_name)
     
@@ -182,7 +182,7 @@ def render_clash_subscription(customer: Customer) -> str:
         logger.warning(warning)
     
     # 备用节点
-    backup_name = f"{customer.name}-备用-直连"
+    backup_name = customer.get_backup_display_name()
     backup_node = customer.get_effective_backup()
     backup_proxy = get_clash_proxy(backup_node, backup_name)
     

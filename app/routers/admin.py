@@ -70,6 +70,11 @@ async def create_customer(
         name=request.name,
         enabled=request.enabled,
         nodes=request.nodes,
+        ip_source=request.ip_source,
+        expires_at=request.expires_at,
+        remark=request.remark,
+        primary_name=request.primary_name,
+        backup_name=request.backup_name,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )
@@ -99,6 +104,11 @@ async def list_customers(username: str = Depends(verify_credentials)):
             name=c.name,
             enabled=c.enabled,
             has_override=c.override is not None,
+            ip_source=c.ip_source,
+            expires_at=c.expires_at,
+            remark=c.remark,
+            primary_name=c.primary_name,
+            backup_name=c.backup_name,
             created_at=c.created_at,
             updated_at=c.updated_at,
             subscribe_urls=get_subscribe_urls(c.token)
@@ -132,7 +142,12 @@ async def update_customer(
         token=token,
         name=request.name,
         enabled=request.enabled,
-        nodes=request.nodes
+        nodes=request.nodes,
+        ip_source=request.ip_source,
+        expires_at=request.expires_at,
+        remark=request.remark,
+        primary_name=request.primary_name,
+        backup_name=request.backup_name
     )
     
     if not customer:

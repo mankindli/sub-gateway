@@ -75,6 +75,11 @@ class Customer(BaseModel):
     enabled: bool = True
     nodes: Nodes
     override: Optional[Override] = None
+    ip_source: Optional[str] = None  # IP来源（如：狗云、搬瓦工、自建等）
+    expires_at: Optional[datetime] = None  # 到期时间
+    remark: Optional[str] = None  # 备注
+    primary_name: Optional[str] = None  # 主用节点名称（默认使用客户名称）
+    backup_name: Optional[str] = None  # 备用节点名称（默认使用客户名称）
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
@@ -89,6 +94,14 @@ class Customer(BaseModel):
         if self.override and self.override.backup:
             return self.override.backup
         return self.nodes.backup
+    
+    def get_primary_display_name(self) -> str:
+        """获取主用节点显示名称"""
+        return self.primary_name or self.name
+    
+    def get_backup_display_name(self) -> str:
+        """获取备用节点显示名称"""
+        return self.backup_name or self.name
 
 
 class CustomersConfig(BaseModel):
@@ -102,6 +115,11 @@ class CreateCustomerRequest(BaseModel):
     name: str
     nodes: Nodes
     enabled: bool = True
+    ip_source: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    remark: Optional[str] = None
+    primary_name: Optional[str] = None
+    backup_name: Optional[str] = None
 
 
 class CreateCustomerResponse(BaseModel):
@@ -116,6 +134,11 @@ class UpdateCustomerRequest(BaseModel):
     name: Optional[str] = None
     enabled: Optional[bool] = None
     nodes: Optional[Nodes] = None
+    ip_source: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    remark: Optional[str] = None
+    primary_name: Optional[str] = None
+    backup_name: Optional[str] = None
 
 
 class RotateTokenResponse(BaseModel):
@@ -138,6 +161,12 @@ class CustomerListItem(BaseModel):
     name: str
     enabled: bool
     has_override: bool
+    ip_source: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    remark: Optional[str] = None
+    primary_name: Optional[str] = None
+    backup_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     subscribe_urls: Dict[str, str]
+
